@@ -95,6 +95,7 @@ def load_model_and_scaler():
 
 model, scaler, load_err = load_model_and_scaler()
 
+
 # ---------------------------
 # Sidebar
 # ---------------------------
@@ -301,6 +302,7 @@ st.markdown(
     "<hr><center>© Athlete Monitor • SQL Login • ML Powered</center>",
     unsafe_allow_html=True
 )
+
 
 
 
