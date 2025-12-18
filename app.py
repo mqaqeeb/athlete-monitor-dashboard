@@ -111,6 +111,8 @@ page = st.sidebar.radio(
 st.sidebar.markdown("---")
 if load_err:
     st.sidebar.error("⚠ Model Load Failed")
+    st.sidebar.code(load_err)
+
 else:
     st.sidebar.success("Model Loaded Successfully")
 
@@ -302,6 +304,7 @@ st.markdown(
     "<hr><center>© Athlete Monitor • SQL Login • ML Powered</center>",
     unsafe_allow_html=True
 )
+
 
 
 
