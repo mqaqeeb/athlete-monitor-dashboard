@@ -7,6 +7,7 @@ Author: ChatGPT
 import streamlit as st
 import pandas as pd
 import numpy as np
+Force install plotly
 import plotly
 import plotly.express as px
 import joblib
@@ -301,4 +302,5 @@ st.markdown(
     "<hr><center>© Athlete Monitor • SQL Login • ML Powered</center>",
     unsafe_allow_html=True
 )
+
 
