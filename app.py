@@ -92,6 +92,7 @@ def load_model_and_scaler():
     except Exception as e:
         return None, None, str(e)
 
+
 model, scaler, load_err = load_model_and_scaler()
 
 # ---------------------------
