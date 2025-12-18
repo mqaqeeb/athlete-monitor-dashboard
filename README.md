@@ -47,3 +47,6 @@ real wearable devices in the future.
 ## 👤 Author
 Mohammed Aqeeb Mohiuddin
 Computer Science Student | Machine Learning & Cloud Enthusiast
+
+## 🚀 Live Demo
+👉 https://paramonitor.streamlit.app
