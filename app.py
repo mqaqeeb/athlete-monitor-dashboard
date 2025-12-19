@@ -35,11 +35,23 @@ def login_screen():
     tab1, tab2 = st.tabs(["Login", "Register"])
 
     # ----- LOGIN -----
-    with tab1:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+   def login_screen():
+    st.set_page_config(page_title="Login - Athlete Monitor", layout="centered")
 
-        if st.button("Login"):
+    st.image("logo.png", width=150)
+    st.markdown(
+        "<h1 style='text-align:center;'>Athlete Monitor Login</h1>",
+        unsafe_allow_html=True
+    )
+
+    tab1, tab2 = st.tabs(["Login", "Register"])
+
+    # ----- LOGIN -----
+    with tab1:
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
+
+        if st.button("Login", key="login_btn"):
             user = validate_user(username, password)
             if user:
                 st.session_state.logged_in = True
@@ -52,16 +64,17 @@ def login_screen():
 
     # ----- REGISTER -----
     with tab2:
-        full_name = st.text_input("Full Name")
-        new_user = st.text_input("Username")
-        new_pass = st.text_input("Password", type="password")
-        role = st.selectbox("Register as", ["Athlete", "Coach"])
+        full_name = st.text_input("Full Name", key="reg_fullname")
+        new_user = st.text_input("Username", key="reg_username")
+        new_pass = st.text_input("Password", type="password", key="reg_password")
+        role = st.selectbox("Register as", ["Athlete", "Coach"], key="reg_role")
 
-        if st.button("Register"):
+        if st.button("Register", key="register_btn"):
             if add_user(new_user, full_name, new_pass, role):
                 st.success("Account created successfully")
             else:
                 st.error("Username already exists")
+
 
 # ---------------------------
 # Show login if not logged in
@@ -243,3 +256,4 @@ elif page == "Profile":
 # ---------------------------
 st.markdown("<hr><center>© Athlete Monitor</center>",
             unsafe_allow_html=True)
+
