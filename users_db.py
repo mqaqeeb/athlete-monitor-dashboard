@@ -3,16 +3,12 @@ import hashlib
 
 DB_NAME = "users.db"
 
-def get_connection():
-    return sqlite3.connect(DB_NAME, check_same_thread=False)
-
 def create_user_table():
-    conn = get_connection()
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
+            username TEXT PRIMARY KEY,
             full_name TEXT,
             password TEXT,
             role TEXT
@@ -21,31 +17,30 @@ def create_user_table():
     conn.commit()
     conn.close()
 
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
 def add_user(username, full_name, password, role):
-    conn = get_connection()
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
+    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
     try:
         c.execute(
-            "INSERT INTO users (username, full_name, password, role) VALUES (?, ?, ?, ?)",
-            (username, full_name, hash_password(password), role)
+            "INSERT INTO users (username, full_name, password, role) VALUES (?,?,?,?)",
+            (username, full_name, hashed_pw, role)
         )
         conn.commit()
-        return True
-    except sqlite3.IntegrityError:
-        return False
-    finally:
-        conn.close()
+        success = True
+    except:
+        success = False
+    conn.close()
+    return success
 
 def validate_user(username, password):
-    conn = get_connection()
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
+    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
     c.execute(
-        "SELECT username, role FROM users WHERE username=? AND password=?",
-        (username, hash_password(password))
+        "SELECT username, full_name, password, role FROM users WHERE username=? AND password=?",
+        (username, hashed_pw)
     )
     user = c.fetchone()
     conn.close()
-    return user  # returns (username, role)
+    return user
