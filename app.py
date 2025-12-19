@@ -23,19 +23,9 @@ if "role" not in st.session_state:
     st.session_state.role = ""
 
 # ---------------------------
-# Login + Register
+# Login + Register Screen
 # ---------------------------
 def login_screen():
-    st.set_page_config(page_title="Login - Athlete Monitor", layout="centered")
-    st.image("logo.png", width=150)
-
-    st.markdown("<h1 style='text-align:center;'>Athlete Monitor Login</h1>",
-                unsafe_allow_html=True)
-
-    tab1, tab2 = st.tabs(["Login", "Register"])
-
-    # ----- LOGIN -----
-   def login_screen():
     st.set_page_config(page_title="Login - Athlete Monitor", layout="centered")
 
     st.image("logo.png", width=150)
@@ -71,13 +61,12 @@ def login_screen():
 
         if st.button("Register", key="register_btn"):
             if add_user(new_user, full_name, new_pass, role):
-                st.success("Account created successfully")
+                st.success("Account created successfully. Please log in.")
             else:
                 st.error("Username already exists")
 
-
 # ---------------------------
-# Show login if not logged in
+# Show login screen
 # ---------------------------
 if not st.session_state.logged_in:
     login_screen()
@@ -103,7 +92,7 @@ def load_model():
 model, scaler, load_err = load_model()
 
 # ---------------------------
-# Sidebar (PAGE DEFINED HERE ✅)
+# Sidebar (Navigation)
 # ---------------------------
 st.sidebar.image("logo.png", width=120)
 st.sidebar.title("Athlete Monitor")
@@ -119,17 +108,15 @@ st.sidebar.markdown("---")
 if load_err:
     st.sidebar.error("Model load failed")
 else:
-    st.sidebar.success("Model loaded")
+    st.sidebar.success("Model loaded successfully")
 
 uploaded_sessions = st.sidebar.file_uploader(
     "Upload Sensor_Data_1000_Rows.csv", type=["csv"]
 )
 
-sessions_df = None
-if uploaded_sessions:
-    sessions_df = pd.read_csv(uploaded_sessions)
+sessions_df = pd.read_csv(uploaded_sessions) if uploaded_sessions else None
 
-if st.sidebar.button("Logout"):
+if st.sidebar.button("🚪 Logout"):
     st.session_state.clear()
     st.rerun()
 
@@ -149,7 +136,6 @@ st.markdown("<hr>", unsafe_allow_html=True)
 # DASHBOARD
 # ---------------------------
 if page == "Dashboard":
-
     st.subheader("Core Metrics")
 
     col1, col2, col3 = st.columns(3)
@@ -172,10 +158,9 @@ if page == "Dashboard":
     col3.progress(hydration / 100)
 
     st.markdown("---")
-
     st.subheader("Quick Fatigue Predictor")
 
-    with st.form("predict"):
+    with st.form("predict_form"):
         vals = [
             st.number_input("Duration (min)", 1.0),
             st.number_input("Distance / Reps", 100.0),
@@ -201,12 +186,13 @@ elif page == "Insights":
     if sessions_df is None:
         st.info("Upload CSV to view insights")
     else:
-        st.plotly_chart(px.histogram(
-            sessions_df, x="Avg_Heart_Rate"),
-            use_container_width=True)
+        st.plotly_chart(
+            px.histogram(sessions_df, x="Avg_Heart_Rate"),
+            use_container_width=True
+        )
 
 # ---------------------------
-# ALERTS (BEST PRACTICE FIX ✅)
+# ALERTS (Summarized – Best Practice)
 # ---------------------------
 elif page == "Alerts":
     st.header("Alerts")
@@ -231,6 +217,7 @@ elif page == "Alerts":
 elif page == "Batch Predict":
     st.header("Batch Prediction")
     file = st.file_uploader("Upload CSV", type=["csv"])
+
     if file and model:
         df = pd.read_csv(file)
         df["Predicted_Fatigue_Level"] = model.predict(
@@ -256,4 +243,3 @@ elif page == "Profile":
 # ---------------------------
 st.markdown("<hr><center>© Athlete Monitor</center>",
             unsafe_allow_html=True)
-
