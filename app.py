@@ -260,15 +260,30 @@ elif page == "Insights":
 # ---------------------------
 # ALERTS
 # ---------------------------
+
 elif page == "Alerts":
     st.header("Alerts")
+
     if sessions_df is None:
         st.info("Upload CSV to show alerts")
-    else:
-        for _, row in sessions_df.tail(10).iterrows():
-            if row.get("Fatigue_Level", 0) >= 2:
-                st.warning("⚠ High Fatigue Detected")
 
+    else:
+        recent_sessions = sessions_df.tail(10)
+
+        # Count high fatigue sessions
+        high_fatigue_count = (
+            recent_sessions.get("Fatigue_Level", pd.Series())
+            .ge(2)
+            .sum()
+        )
+
+        if high_fatigue_count > 0:
+            st.warning(
+                f"⚠ High fatigue detected in {high_fatigue_count} recent sessions. "
+                "Rest or recovery is recommended."
+            )
+        else:
+            st.success("✅ No high fatigue detected in recent sessions.")
 # ---------------------------
 # BATCH PREDICTION
 # ---------------------------
@@ -304,6 +319,7 @@ st.markdown(
     "<hr><center>© Athlete Monitor • SQL Login • ML Powered</center>",
     unsafe_allow_html=True
 )
+
 
 
 
