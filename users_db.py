@@ -3,38 +3,49 @@ import hashlib
 
 DB_NAME = "users.db"
 
+def get_connection():
+    return sqlite3.connect(DB_NAME, check_same_thread=False)
+
 def create_user_table():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
     c.execute("""
-        CREATE TABLE IF NOT EXISTS users(
-            username TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
             full_name TEXT,
-            password TEXT
+            password TEXT,
+            role TEXT
         )
     """)
     conn.commit()
     conn.close()
 
-def add_user(username, full_name, password):
-    conn = sqlite3.connect(DB_NAME)
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def add_user(username, full_name, password, role):
+    conn = get_connection()
     c = conn.cursor()
-    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
     try:
-        c.execute("INSERT INTO users VALUES (?,?,?)",
-                  (username, full_name, hashed_pw))
+        c.execute(
+            "INSERT INTO users (username, full_name, password, role) VALUES (?, ?, ?, ?)",
+            (username, full_name, hash_password(password), role)
+        )
         conn.commit()
-        success = True
-    except:
-        success = False
-    conn.close()
-    return success
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
 
 def validate_user(username, password):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     c = conn.cursor()
-    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
-    c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, hashed_pw))
-    data = c.fetchone()
+    c.execute(
+        "SELECT username, role FROM users WHERE username=? AND password=?",
+        (username, hash_password(password))
+    )
+    user = c.fetchone()
     conn.close()
-    return data
+    return user  # returns (username, role)
