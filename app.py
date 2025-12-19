@@ -1,7 +1,7 @@
 # app.py
 """
-Athlete Dashboard with SQL Login + Glow Logo + Model Integration
-Author: ChatGPT
+Athlete Monitor Dashboard
+SQL Login + ML-Based Fatigue Prediction
 """
 
 import streamlit as st
@@ -24,6 +24,8 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
+if "role" not in st.session_state:
+    st.session_state.role = ""
 
 # ---------------------------
 # Login + Register UI
@@ -32,7 +34,6 @@ def login_screen():
 
     st.set_page_config(page_title="Login - Athlete Monitor", layout="centered")
 
-    # ✅ LOGO (Streamlit native – FIXED)
     st.image("logo.png", width=150)
 
     st.markdown(
@@ -48,9 +49,11 @@ def login_screen():
         password = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            if validate_user(username, password):
+            user = validate_user(username, password)
+            if user:
                 st.session_state.logged_in = True
-                st.session_state.username = username
+                st.session_state.username = user[0]
+                st.session_state.role = user[1]
                 st.success("Login successful!")
                 st.rerun()
             else:
@@ -62,9 +65,14 @@ def login_screen():
         new_user = st.text_input("New Username")
         new_pass = st.text_input("New Password", type="password")
 
+        role = st.selectbox(
+            "Register as",
+            ["Athlete", "Coach"]
+        )
+
         if st.button("Register"):
-            if add_user(new_user, full_name, new_pass):
-                st.success("🎉 Account created successfully!")
+            if add_user(new_user, full_name, new_pass, role):
+                st.success("🎉 Account created successfully! Please login.")
             else:
                 st.error("❌ Username already exists")
 
@@ -92,16 +100,16 @@ def load_model_and_scaler():
     except Exception as e:
         return None, None, str(e)
 
-
 model, scaler, load_err = load_model_and_scaler()
-
 
 # ---------------------------
 # Sidebar
 # ---------------------------
 st.sidebar.image("logo.png", width=140)
 st.sidebar.title("Athlete Monitor")
-st.sidebar.write(f"👤 Logged in as: **{st.session_state.username}**")
+st.sidebar.write(
+    f"👤 **{st.session_state.username}** ({st.session_state.role})"
+)
 
 page = st.sidebar.radio(
     "Go to",
@@ -112,7 +120,6 @@ st.sidebar.markdown("---")
 if load_err:
     st.sidebar.error("⚠ Model Load Failed")
     st.sidebar.code(load_err)
-
 else:
     st.sidebar.success("Model Loaded Successfully")
 
@@ -135,6 +142,7 @@ st.sidebar.markdown("---")
 if st.sidebar.button("🚪 Logout"):
     st.session_state.logged_in = False
     st.session_state.username = ""
+    st.session_state.role = ""
     st.rerun()
 
 # ---------------------------
@@ -152,7 +160,7 @@ def safe_predict_row(row):
     return int(model.predict(arr_scaled)[0])
 
 # ---------------------------
-# Header (LOGO FIXED)
+# Header
 # ---------------------------
 col_logo, col_title = st.columns([1, 6])
 
@@ -172,79 +180,8 @@ st.markdown("<hr>", unsafe_allow_html=True)
 # DASHBOARD
 # ---------------------------
 if page == "Dashboard":
-
-    col1, col2, col3 = st.columns([2, 5, 2])
-
-    with col1:
-        # ✅ DYNAMIC ATHLETE NAME
-        st.subheader(f"Athlete: {st.session_state.username}")
-        st.caption("Category: Para Athlete — Wheelchair")
-
-    with col2:
-        st.metric("Today's Session", "Interval • 45 min", delta="↑ 3%")
-
-    with col3:
-        st.write("Status")
-        st.markdown(
-            '<div style="width:36px;height:18px;background:#4CAF50;border-radius:6px;"></div>',
-            unsafe_allow_html=True
-        )
-
-    st.markdown("### Core Metrics")
-    m1, m2, m3 = st.columns(3)
-
-    if sessions_df is not None:
-        latest = sessions_df.iloc[-1]
-        avg_hr = float(latest["Avg_Heart_Rate"])
-        fatigue_est = int(latest.get("Fatigue_Level", 1))
-        hydration_pct = int(
-            100 * latest.get("Post_Session_Weight", 0) /
-            max(1, latest.get("Pre_Session_Weight", 1))
-        )
-    else:
-        avg_hr, fatigue_est, hydration_pct = 118, 1, 72
-
-    with m1:
-        st.metric("Heart Rate", avg_hr)
-        st.plotly_chart(
-            px.line(y=np.random.normal(avg_hr, 3, 30), height=120),
-            use_container_width=True
-        )
-
-    with m2:
-        st.metric("Fatigue Level", fatigue_est)
-        st.progress(fatigue_est / 3)
-
-    with m3:
-        st.metric("Hydration %", f"{hydration_pct}%")
-        st.progress(hydration_pct / 100)
-
-    st.markdown("---")
-    st.markdown("### Quick Fatigue Predictor")
-
-    with st.form("predict_form"):
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-            duration = st.number_input("Duration (min)", 1.0)
-            distance = st.number_input("Distance / Reps", 100.0)
-            hr = st.number_input("Avg HR", 120.0)
-
-        with c2:
-            hrv = st.number_input("HRV", 55.0)
-            spo2 = st.number_input("SpO2", 97.0)
-            temp = st.number_input("Skin Temp", 35.0)
-
-        with c3:
-            sweat = st.number_input("Sweat Rate", 500.0)
-            pre_w = st.number_input("Pre Weight", 70.0)
-            post_w = st.number_input("Post Weight", 69.0)
-
-        submit = st.form_submit_button("Predict")
-
-    if submit:
-        row = [duration, distance, hr, hrv, spo2, temp, sweat, pre_w, post_w]
-        st.success(f"Predicted Fatigue Level: {safe_predict_row(row)}")
+    st.subheader(f"Athlete: {st.session_state.username}")
+    st.caption(f"Role: {st.session_state.role}")
 
 # ---------------------------
 # INSIGHTS
@@ -254,28 +191,24 @@ elif page == "Insights":
     if sessions_df is None:
         st.info("Upload CSV to view insights")
     else:
-        st.plotly_chart(px.histogram(sessions_df, x="Avg_Heart_Rate"),
-                         use_container_width=True)
+        st.plotly_chart(
+            px.histogram(sessions_df, x="Avg_Heart_Rate"),
+            use_container_width=True
+        )
 
 # ---------------------------
-# ALERTS
+# ALERTS (SUMMARY – BEST PRACTICE)
 # ---------------------------
-
 elif page == "Alerts":
     st.header("Alerts")
 
     if sessions_df is None:
         st.info("Upload CSV to show alerts")
-
     else:
-        recent_sessions = sessions_df.tail(10)
-
-        # Count high fatigue sessions
-        high_fatigue_count = (
-            recent_sessions.get("Fatigue_Level", pd.Series())
-            .ge(2)
-            .sum()
-        )
+        recent = sessions_df.tail(10)
+        high_fatigue_count = recent.get(
+            "Fatigue_Level", pd.Series()
+        ).ge(2).sum()
 
         if high_fatigue_count > 0:
             st.warning(
@@ -284,18 +217,22 @@ elif page == "Alerts":
             )
         else:
             st.success("✅ No high fatigue detected in recent sessions.")
+
 # ---------------------------
 # BATCH PREDICTION
 # ---------------------------
 elif page == "Batch Predict":
     st.header("Batch Prediction")
     uploaded = st.file_uploader("Upload CSV", type=["csv"])
+
     if uploaded:
         df = pd.read_csv(uploaded)
         if list(df.columns) != EXPECTED_INPUT_COLS:
             st.error("Incorrect CSV column order")
         else:
-            df["Predicted_Fatigue_Level"] = model.predict(scaler.transform(df))
+            df["Predicted_Fatigue_Level"] = model.predict(
+                scaler.transform(df)
+            )
             st.success("Prediction completed")
             st.download_button(
                 "Download CSV",
@@ -309,20 +246,13 @@ elif page == "Batch Predict":
 elif page == "Profile":
     st.header("User Profile")
     st.write(f"Username: **{st.session_state.username}**")
-    st.write("Role: Athlete / Coach")
-    st.write("Version: 1.0")
+    st.write(f"Role: **{st.session_state.role}**")
+    st.write("Version: 1.1")
 
 # ---------------------------
 # Footer
 # ---------------------------
 st.markdown(
-    "<hr><center>© Athlete Monitor • SQL Login • ML Powered</center>",
+    "<hr><center>© Athlete Monitor • ML Powered Dashboard</center>",
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-
